@@ -1,0 +1,296 @@
+const gridSize = 30;
+const cell = 20;
+const size = gridSize * cell;
+const foodsPerLevel = 5;
+
+const levels = Array.from({ length: 30 }, (_, i) => {
+  const n = i + 1;
+  const speed = Math.max(60, 220 - n * 5);
+  const obstacles = Math.min(60, Math.floor(n * 1.5));
+  return { n, tickMs: speed, goal: foodsPerLevel, obstacles };
+});
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const $level = document.getElementById('level');
+const $score = document.getElementById('score');
+const $goal = document.getElementById('goal');
+const $speed = document.getElementById('speed');
+const overlay = document.getElementById('overlay');
+const panel = document.getElementById('panel');
+const title = document.getElementById('title');
+const message = document.getElementById('message');
+const btnStart = document.getElementById('btn-start');
+const btnRestart = document.getElementById('btn-restart');
+const btnNext = document.getElementById('btn-next');
+
+let loop = null;
+let state = null;
+
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function eq(a,b){ return a.x===b.x && a.y===b.y }
+
+function emptyGrid(){
+  const map = [];
+  for(let y=0;y<gridSize;y++){ map[y]=Array(gridSize).fill(0) }
+  return map;
+}
+
+function spawnObstacles(count, snake){
+  const set = new Set(snake.map(p=>p.x+','+p.y));
+  const obs = [];
+  let tries = 0;
+  while(obs.length < count && tries < 5000){
+    tries++;
+    const x = randInt(0, gridSize-1);
+    const y = randInt(0, gridSize-1);
+    const k = x+','+y;
+    if(set.has(k)) continue;
+    if(obs.some(o=>o.x===x && o.y===y)) continue;
+    obs.push({x,y});
+  }
+  return obs;
+}
+
+function spawnFood(snake, obstacles){
+  const occupied = new Set([...snake.map(p=>p.x+','+p.y), ...obstacles.map(p=>p.x+','+p.y)]);
+  let tries = 0;
+  while(tries < 5000){
+    tries++;
+    const x = randInt(0, gridSize-1);
+    const y = randInt(0, gridSize-1);
+    const k = x+','+y;
+    if(!occupied.has(k)) return {x,y};
+  }
+  return null;
+}
+
+function drawCell(x,y,color){
+  ctx.fillStyle = color;
+  ctx.fillRect(x*cell, y*cell, cell-1, cell-1);
+}
+
+function draw(){
+  ctx.clearRect(0,0,size,size);
+  ctx.fillStyle = '#0b0f1e';
+  ctx.fillRect(0,0,size,size);
+  for(const o of state.obstacles) drawCell(o.x,o.y,'#a78bfa');
+  drawCell(state.food.x, state.food.y, '#ffe66d');
+  for(let i=0;i<state.snake.length;i++){
+    const s = state.snake[i];
+    const color = i===0? '#4fd1c5' : '#7dd3fc';
+    drawCell(s.x, s.y, color);
+  }
+}
+
+function tick(){\n  // 方向缓冲\n  beforeTick();
+  const head = {...state.snake[0]};
+  head.x += state.dir.x; head.y += state.dir.y;
+  if(head.x<0||head.x>=gridSize||head.y<0||head.y>=gridSize){ sound.hit(); return gameOver('撞墙了！') }
+  if(state.snake.some((p,i)=>i>0 && eq(p,head))){ sound.hit(); return gameOver('咬到自己了！') }
+  if(state.obstacles.some(o=>eq(o,head))){ sound.hit(); return gameOver('撞到障碍！') }
+  state.snake.unshift(head);
+  if(eq(head, state.food)){ sound.eat();
+    state.score += 10;
+    state.eaten += 1;
+    if(state.eaten >= state.level.goal){ return levelClear() }
+    state.food = spawnFood(state.snake, state.obstacles) || state.food;
+    updateHud();
+  }else{
+    state.snake.pop();
+  }
+  draw();
+}
+
+function updateHud(){
+  $level.textContent = state.level.n;
+  $score.textContent = state.score;
+  $goal.textContent = `${state.eaten}/${state.level.goal}`;
+  $speed.textContent = `${Math.round(1000/state.level.tickMs)}格/秒`;
+}
+
+function startLoop(){
+  stopLoop();
+  loop = setInterval(tick, state.level.tickMs);
+}
+function stopLoop(){ if(loop){ clearInterval(loop); loop=null } }
+
+function newGame(){
+  state = {
+    levelIndex: 0,
+    level: levels[0],
+    snake: [ {x:15,y:15}, {x:14,y:15}, {x:13,y:15} ],
+    dir: {x:1,y:0},
+    pendingDir: null,
+    food: {x:20,y:15},
+    obstacles: [],
+    eaten: 0,
+    score: 0,
+    paused: false,
+  };
+  state.obstacles = spawnObstacles(state.level.obstacles, state.snake);
+  state.food = spawnFood(state.snake, state.obstacles) || {x:5,y:5};
+  updateHud();
+  draw();
+}
+
+function setLevel(i){
+  state.levelIndex = i;
+  state.level = levels[i];
+  state.eaten = 0;
+  state.snake = [ {x:15,y:15}, {x:14,y:15}, {x:13,y:15} ];
+  state.dir = {x:1,y:0};
+  state.obstacles = spawnObstacles(state.level.obstacles, state.snake);
+  state.food = spawnFood(state.snake, state.obstacles) || {x:5,y:5};
+  updateHud();
+  draw();
+}
+
+function showOverlay(t, msg, buttons){
+  title.textContent = t; message.textContent = msg;
+  btnStart.classList.toggle('hidden', !buttons.includes('start'));
+  btnRestart.classList.toggle('hidden', !buttons.includes('restart'));
+  btnNext.classList.toggle('hidden', !buttons.includes('next'));
+  overlay.classList.remove('hidden');
+}
+
+function hideOverlay(){ overlay.classList.add('hidden') }
+
+function gameOver(msg){
+  stopLoop();
+  showOverlay('游戏结束', `${msg} 得分：${state.score}`,[ 'restart' ]);
+}
+
+function levelClear(){ sound.win();
+  stopLoop();
+  if(state.levelIndex === levels.length-1){
+    showOverlay('通关！', `恭喜完成第 ${levels.length} 关，总分：${state.score}`,[ 'restart' ]);
+  }else{
+    showOverlay(`第 ${state.level.n} 关通过`, '准备进入下一关。',[ 'next','restart' ]);
+  }
+}
+
+function handleKey(e){
+  const k = e.key.toLowerCase();
+  if(k===' '){
+    e.preventDefault();
+    if(overlay.classList.contains('hidden')){
+      state.paused = !state.paused;
+      if(state.paused){ stopLoop(); showOverlay('暂停','按空格继续',[ ]) }
+      else { hideOverlay(); startLoop() }
+    }else{
+      hideOverlay(); startLoop();
+    }
+    return;
+  }
+  if(k==='r') { e.preventDefault(); stopLoop(); newGame(); showOverlay('重新开始','按开始或空格开局',[ 'start' ]); return }
+  const dirMap = { w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0} };
+  if(dirMap[k]){
+    const nd = dirMap[k];
+    const cur = state.pendingDir || state.dir;
+    if(cur.x + nd.x !== 0 || cur.y + nd.y !== 0){ state.pendingDir = nd }
+  }
+}
+
+function beforeTick(){
+  if(state.pendingDir){ state.dir = state.pendingDir; state.pendingDir = null }
+}
+
+function patchedTick(){ beforeTick(); tick(); }
+
+function boot(){
+  canvas.width = size; canvas.height = size;
+  newGame();
+  showOverlay('开始游戏','按开始或空格开始，WASD 控制方向。',[ 'start' ]);
+}
+
+document.addEventListener('keydown', handleKey);
+
+btnStart.addEventListener('click', ()=>{ hideOverlay(); startLoop() });
+btnRestart.addEventListener('click', ()=>{ hideOverlay(); newGame(); startLoop() });
+btnNext.addEventListener('click', ()=>{ hideOverlay(); setLevel(state.levelIndex+1); startLoop() });
+
+// replace main loop with dir-batching
+function startLoop(){ stopLoop(); loop=setInterval(patchedTick, state.level.tickMs) }
+
+boot();
+// --- 音效与触控、自定义支持 ---
+const sound = (()=>{
+  let enabled = true; let ctx; let vol;
+  function ensure(){ if(!ctx){ ctx = new (window.AudioContext||window.webkitAudioContext)(); vol = ctx.createGain(); vol.gain.value=.08; vol.connect(ctx.destination);} }
+  function tone(freq=440, dur=0.08, type='square'){
+    if(!enabled) return; ensure(); const t=ctx.currentTime; const o=ctx.createOscillator(); const g=ctx.createGain(); o.type=type; o.frequency.value=freq; o.connect(g); g.connect(vol); g.gain.setValueAtTime(.001,t); g.gain.exponentialRampToValueAtTime(.5,t+.01); g.gain.exponentialRampToValueAtTime(.001,t+dur); o.start(t); o.stop(t+dur);
+  }
+  return {
+    toggle(){ enabled=!enabled; if(enabled) tone(880,0.06,'sine'); updateSoundBtn(); },
+    eat(){ tone(740,0.06,'triangle') },
+    move(){ /*可选移动声*/ },
+    hit(){ tone(140,0.3,'sawtooth') },
+    win(){ tone(520,0.1,'square'); setTimeout(()=>tone(660,0.12,'square'),90) },
+    enabled(){ return enabled }
+  }
+})();
+
+function updateSoundBtn(){ const b=document.getElementById('btn-sound'); if(b) b.textContent = '音效：' + (sound.enabled()? '开':'关'); }
+
+// 触控
+const touchpad = document.getElementById('touchpad');
+function toggleTouch(){ touchpad.classList.toggle('hidden'); }
+if(document.getElementById('btn-touch')) document.getElementById('btn-touch').onclick = toggleTouch;
+
+['w','a','s','d'].forEach(k=>{
+  const btn = touchpad?.querySelector(`[data-dir="${k}"]`);
+  if(btn) btn.addEventListener('click', ()=>handleVirtualDir(k));
+});
+
+function handleVirtualDir(k){ handleDirKey(k); }
+
+// 自定义（本地保存）
+const customKey = 'snake30.custom.v1';
+function loadCustom(){ try{ return JSON.parse(localStorage.getItem(customKey)||'{}') }catch{ return {} } }
+function saveCustom(data){ localStorage.setItem(customKey, JSON.stringify(data)) }
+let custom = loadCustom();
+
+function applyCustomForLevel(i){
+  const cfg = custom[i]; if(!cfg) return;
+  if(typeof cfg.goal==='number') state.level.goal = cfg.goal;
+  if(Array.isArray(cfg.obstacles)) state.obstacles = cfg.obstacles.map(p=>({x:p.x,y:p.y}));
+}
+
+// 编辑模式
+let editMode = false;
+function setEditMode(on){ editMode=on; canvas.classList.toggle('editing', on) }
+canvas.addEventListener('click', (e)=>{
+  if(!editMode) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX-rect.left)/ (rect.width/ gridSize));
+  const y = Math.floor((e.clientY-rect.top)/ (rect.height/ gridSize));
+  const idx = state.obstacles.findIndex(o=>o.x===x && o.y===y);
+  if(idx>=0) state.obstacles.splice(idx,1); else state.obstacles.push({x,y});
+  draw();
+});
+
+// 自定义面板交互
+const customizer = document.getElementById('customizer');
+const btnCustom = document.getElementById('btn-custom');
+if(btnCustom){ btnCustom.onclick = ()=>{ document.getElementById('cfg-goal').value = state.level.goal; customizer.classList.remove('hidden'); } }
+if(document.getElementById('cfg-edit-map')) document.getElementById('cfg-edit-map').onclick = ()=>{ setEditMode(!editMode) };
+if(document.getElementById('cfg-cancel')) document.getElementById('cfg-cancel').onclick = ()=>{ setEditMode(false); customizer.classList.add('hidden') };
+if(document.getElementById('cfg-reset')) document.getElementById('cfg-reset').onclick = ()=>{ delete custom[state.levelIndex]; saveCustom(custom); setEditMode(false); customizer.classList.add('hidden'); setLevel(state.levelIndex); };
+if(document.getElementById('cfg-save')) document.getElementById('cfg-save').onclick = ()=>{
+  const goal = Math.max(1, Math.min(50, parseInt(document.getElementById('cfg-goal').value||state.level.goal)));
+  custom[state.levelIndex] = { goal, obstacles: state.obstacles.map(o=>({x:o.x,y:o.y})) };
+  saveCustom(custom); setEditMode(false); customizer.classList.add('hidden'); updateHud();
+};
+
+// 滑动手势
+let touchStart=null;
+canvas.addEventListener('touchstart', e=>{ const t=e.touches[0]; touchStart={x:t.clientX,y:t.clientY,time:Date.now()}; });
+canvas.addEventListener('touchend', e=>{
+  if(!touchStart) return; const t=e.changedTouches[0]; const dx=t.clientX-touchStart.x; const dy=t.clientY-touchStart.y; const ax=Math.abs(dx), ay=Math.abs(dy);
+  if(Math.max(ax,ay) > 20){ if(ax>ay) handleVirtualDir(dx>0?'d':'a'); else handleVirtualDir(dy>0?'s':'w'); }
+  touchStart=null;
+});
+
+// 顶部按钮
+if(document.getElementById('btn-sound')) document.getElementById('btn-sound').onclick = ()=> sound.toggle();

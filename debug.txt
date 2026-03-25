@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>贪吃蛇 30 关</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <h1>贪吃蛇 30 关</h1>
+      <div class="hud">
+        <span>关卡：<b id="level">1</b>/30</span>
+        <span>得分：<b id="score">0</b></span>
+        <span>目标：<b id="goal">0</b></span>
+        <span>速度：<b id="speed">0</b></span>
+      </div>
+      <div class="actions">\n        <button id="btn-sound">音效：开</button>\n        <button id="btn-touch" class="hide-desktop">触控</button>\n        <button id="btn-custom">自定义</button>\n      </div>\n    </header>
+
+    <main class="board">
+      <canvas id="canvas" width="600" height="600"></canvas>
+      <div id="overlay" class="overlay hidden">
+        <div class="panel" id="panel">
+          <h2 id="title">开始游戏</h2>
+          <p id="message">按空格开始，WASD 控制方向。</p>
+          <button id="btn-start">开始</button>
+          <button id="btn-restart" class="hidden">重新开始</button>
+          <button id="btn-next" class="hidden">下一关</button>
+        </div>
+      </div>
+          <div id="touchpad" class="touchpad hidden">\n        <button data-dir="w">↑</button>\n        <div class="row">\n          <button data-dir="a">←</button>\n          <button data-dir="s">↓</button>\n          <button data-dir="d">→</button>\n        </div>\n      </div>\n    </main>
+
+    <footer class="tips">
+      操作：W上 S下 A左 D右 · 空格暂停/开始 · R重开
+    </footer>
+  </div>
+
+  <script type="module" src="src/game.js"></script>
+      <div id="customizer" class="overlay hidden">
+        <div class="panel">
+          <h2>自定义当前关卡</h2>
+          <div class="rowcfg">
+            <label>目标数量：<input id="cfg-goal" type="number" min="1" max="50" value="5"></label>
+            <button id="cfg-edit-map">编辑地图</button>
+          </div>
+          <p class="muted">提示：在“编辑地图”模式下，点击棋盘格可添加/移除障碍；再次点击按钮退出。</p>
+          <div class="rowcfg">
+            <button id="cfg-save">保存</button>
+            <button id="cfg-cancel">取消</button>
+            <button id="cfg-reset">清除自定义</button>
+          </div>
+        </div>
+      </div>
+</body>
+</html>
+
+
+

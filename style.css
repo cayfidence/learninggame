@@ -1,0 +1,32 @@
+:root{--bg:#0f1220;--fg:#e8ecf3;--muted:#9aa3b2;--accent:#4fd1c5;--danger:#ff6b6b;--food:#ffe66d;--snake:#7dd3fc;--ob:#a78bfa}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1b2037 0%,#0f1220 60%,#0b0e18 100%);color:var(--fg);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:860px;margin:24px auto;padding:0 16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.topbar h1{font-weight:700;font-size:20px;margin:0}
+.hud{display:flex;gap:14px;color:var(--muted)}
+.hud b{color:var(--fg)}
+.board{position:relative;border:1px solid #23273a;border-radius:10px;padding:12px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));box-shadow:0 10px 30px rgba(0,0,0,.35)}
+canvas{width:600px;height:600px;display:block;margin:auto;background:#f7f9fe;border-radius:8px}
+.overlay{position:absolute;inset:12px;display:flex;align-items:center;justify-content:center}
+.overlay.hidden{display:none}
+.panel{background:rgba(10,13,24,.9);backdrop-filter:blur(6px);border:1px solid #2a2f44;border-radius:12px;padding:20px 24px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.45)}
+.panel h2{margin:0 0 8px}
+.panel p{margin:0 0 12px;color:var(--muted)}
+.panel button{margin:4px 6px;padding:8px 14px;border-radius:8px;border:1px solid #2b3147;background:#161a2b;color:var(--fg);cursor:pointer}
+.panel button:hover{border-color:#3b4261}
+.tips{color:var(--muted);text-align:center;margin:10px 0}/* additions for actions and touchpad and customizer */
+.actions{display:flex;gap:8px}
+.actions button{padding:6px 10px;border-radius:8px;border:1px solid #2b3147;background:#171b2d;color:var(--fg);cursor:pointer}
+.actions .hide-desktop{display:none}
+@media (max-width: 720px){ .actions .hide-desktop{display:inline-block} canvas{width:92vw;height:92vw} }
+.touchpad{position:absolute;left:16px;bottom:16px;display:flex;flex-direction:column;gap:6px}
+.touchpad.hidden{display:none}
+.touchpad button{width:56px;height:56px;border-radius:12px;border:1px solid #2b3147;background:#12162a;color:var(--fg);font-size:20px}
+.touchpad .row{display:flex;gap:6px;align-items:center;justify-content:center}
+.overlay .muted{color:var(--muted)}
+.rowcfg{display:flex;gap:10px;align-items:center;justify-content:center;margin:8px 0}
+.editing{outline:2px dashed var(--accent)}
+
+/* light theme */
+body{background:#eef2f9} canvas{background:#f7f9fe} .board{background:#ffffff;border-color:#d5d9e6} .panel{background:rgba(255,255,255,.96);color:#0b1020} .panel button{background:#f1f3fb;color:#0b1020;border-color:#c8cde0} .hud b{color:#0b1020} .tips{color:#364258}

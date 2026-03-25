@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snake - 30 Levels</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <h1>Snake - 30 Levels</h1>
+      <div class="hud">
+        <span>Level: <b id="level">1</b>/30</span>
+        <span>Score: <b id="score">0</b></span>
+        <span>Goal: <b id="goal">0</b></span>
+        <span>Speed: <b id="speed">0</b></span>
+      </div>
+      <div class="actions">
+        <button id="btn-sound">Sound: On</button>
+        <button id="btn-touch" class="hide-desktop">Touch</button>
+        <button id="btn-custom">Customize</button>
+      </div>
+    </header>
+
+    <main class="board">
+      <canvas id="canvas" width="600" height="600"></canvas>
+      <div id="overlay" class="overlay">
+        <div class="panel" id="panel">
+          <h2 id="title">Ready</h2>
+          <p id="message">Press Space to start. Use W/A/S/D to move.</p>
+          <button id="btn-start" onclick="window.__startGame && window.__startGame()">Start</button>
+          <button id="btn-restart" class="hidden" onclick="window.__restartGame && window.__restartGame()">Restart</button>
+          <button id="btn-next" class="hidden" onclick="window.__nextLevel && window.__nextLevel()">Next Level</button>
+        </div>
+      </div>
+
+      <div id="touchpad" class="touchpad hidden">
+        <button data-dir="w">^</button>
+        <div class="row">
+          <button data-dir="a"><</button>
+          <button data-dir="s">v</button>
+          <button data-dir="d">></button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="tips">
+      Controls: W/A/S/D to move | Space to pause/start | R to restart
+    </footer>
+  </div>
+
+  <div id="customizer" class="overlay hidden">
+    <div class="panel">
+      <h2>Customize Current Level</h2>
+      <div class="rowcfg">
+        <label>Goal (foods to eat): <input id="cfg-goal" type="number" min="1" max="50" value="5"></label>
+        <button id="cfg-edit-map">Toggle Map Edit</button>
+      </div>
+      <p class="muted">Tip: In edit mode, click cells on the board to add/remove obstacles. Click the button again to exit.</p>
+      <div class="rowcfg">
+        <button id="cfg-save">Save</button>
+        <button id="cfg-cancel">Cancel</button>
+        <button id="cfg-reset">Clear Custom</button>
+      </div>
+    </div>
+  </div>
+
+  
+<script src="src/game.js"></script>\n</body>
+</html>
